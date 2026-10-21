@@ -12,35 +12,62 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="720.0" prefWidth="1050.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+<BorderPane prefHeight="740.0" prefWidth="1080.0"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.pbl4.app.controller.AdminController"
+            stylesheets="@../style/theme.css"
             style="-fx-background-color: #f8fafc;">
 
-    <!-- Header Quản Trị -->
+    <!-- Header Quản Trị Hiện Đại -->
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="60.0" spacing="15.0"
+        <HBox alignment="CENTER_LEFT" prefHeight="62.0" spacing="16.0"
               style="-fx-background-color: #0f172a; -fx-padding: 10 24;" BorderPane.alignment="CENTER">
-            <Label text="👑 PBL4 ADMIN DASHBOARD" textFill="#f59e0b">
-                <font>
-                    <Font name="System Bold" size="18.0" />
-                </font>
-            </Label>
-            <Separator orientation="VERTICAL" prefHeight="25.0" style="-fx-opacity: 0.3;" />
-            <Label fx:id="lblAdminUser" text="Quản trị viên: ..." textFill="#cbd5e1">
-                <font>
-                    <Font name="System Bold" size="13.0" />
-                </font>
-            </Label>
-            <HBox alignment="CENTER_RIGHT" spacing="12.0" HBox.hgrow="ALWAYS">
+            
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <StackPane prefHeight="38.0" prefWidth="38.0"
+                           style="-fx-background-color: linear-gradient(to bottom right, #f59e0b, #d97706); -fx-background-radius: 10;">
+                    <Label text="👑" textFill="WHITE">
+                        <font><Font size="18.0" /></font>
+                    </Label>
+                </StackPane>
+                <VBox alignment="CENTER_LEFT" spacing="1.0">
+                    <Label text="PBL4 ADMIN DASHBOARD" textFill="#f59e0b">
+                        <font>
+                            <Font name="System Bold" size="16.0" />
+                        </font>
+                    </Label>
+                    <Label text="Quản trị hệ thống, dữ liệu MySQL và nhật ký truyền file" textFill="#94a3b8">
+                        <font><Font size="10.5" /></font>
+                    </Label>
+                </VBox>
+            </HBox>
+
+            <Separator orientation="VERTICAL" prefHeight="26.0" style="-fx-opacity: 0.25;" />
+
+            <HBox alignment="CENTER_LEFT" spacing="8.0"
+                  style="-fx-background-color: rgba(255, 255, 255, 0.08); -fx-background-radius: 20; -fx-padding: 4 12;">
+                <Label text="🛡️" textFill="#fbbf24" />
+                <Label fx:id="lblAdminUser" text="Quản trị viên: ..." textFill="#f1f5f9">
+                    <font>
+                        <Font name="System Bold" size="12.5" />
+                    </font>
+                </Label>
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <HBox alignment="CENTER_RIGHT" spacing="10.0">
                 <Button fx:id="btnGoToChat" mnemonicParsing="false" onAction="#onGoToChat"
-                        style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 7 14;"
+                        styleClass="button, btn-primary"
                         text="💬 Vào Phòng Chat" />
                 <Button fx:id="btnLogout" mnemonicParsing="false" onAction="#onLogout"
-                        style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 7 14;"
-                        text="Đăng Xuất" />
+                        styleClass="button, btn-danger"
+                        text="Đăng Xuất 🚪" />
             </HBox>
         </HBox>
     </top>
@@ -51,41 +78,41 @@
             
             <!-- TAB 1: QUẢN LÝ TÀI KHOẢN -->
             <Tab text="👤 Quản Lý Tài Khoản">
-                <VBox spacing="12.0" style="-fx-padding: 16;">
+                <VBox spacing="12.0" style="-fx-padding: 18;">
                     <!-- Thanh công cụ -->
-                    <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
-                        <TextField fx:id="txtSearchUser" promptText="Tìm theo tên đăng nhập..." prefWidth="240.0"
-                                   style="-fx-pref-height: 36; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 0 10;" />
+                    <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="card" style="-fx-padding: 12 16;">
+                        <TextField fx:id="txtSearchUser" promptText="🔍 Tìm nhanh theo tên đăng nhập..." prefWidth="260.0"
+                                   styleClass="text-field" />
                         <Button mnemonicParsing="false" onAction="#onSearchUser"
-                                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
-                                text="🔍 Tìm Kiếm" />
+                                styleClass="button, btn-primary"
+                                text="Tìm Kiếm" />
                         <Button mnemonicParsing="false" onAction="#onRefreshUsers"
-                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-secondary"
                                 text="🔄 Làm Mới" />
                         
                         <Separator orientation="VERTICAL" prefHeight="25.0" />
 
                         <Button mnemonicParsing="false" onAction="#onAddUser"
-                                style="-fx-background-color: #10b981; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-success"
                                 text="➕ Thêm User" />
                         <Button mnemonicParsing="false" onAction="#onEditUserRole"
-                                style="-fx-background-color: #f59e0b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-warning"
                                 text="⚙ Đổi Quyền Role" />
                         <Button mnemonicParsing="false" onAction="#onResetPassword"
-                                style="-fx-background-color: #8b5cf6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-secondary"
                                 text="🔑 Reset Mật Khẩu" />
                         <Button mnemonicParsing="false" onAction="#onDeleteUser"
-                                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-danger"
                                 text="🗑 Xóa User" />
                     </HBox>
 
                     <!-- Bảng TableView Users -->
-                    <TableView fx:id="tvUsers" VBox.vgrow="ALWAYS" style="-fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8;">
+                    <TableView fx:id="tvUsers" VBox.vgrow="ALWAYS" styleClass="table-view">
                         <columns>
                             <TableColumn fx:id="colUserId" prefWidth="60.0" text="ID" />
                             <TableColumn fx:id="colUserUsername" prefWidth="180.0" text="Tên Đăng Nhập" />
-                            <TableColumn fx:id="colUserRole" prefWidth="120.0" text="Vai Trò (Role)" />
-                            <TableColumn fx:id="colUserStatus" prefWidth="120.0" text="Trạng Thái" />
+                            <TableColumn fx:id="colUserRole" prefWidth="130.0" text="Vai Trò (Role)" />
+                            <TableColumn fx:id="colUserStatus" prefWidth="130.0" text="Trạng Thái" />
                             <TableColumn fx:id="colUserCreatedAt" prefWidth="200.0" text="Ngày Tạo" />
                         </columns>
                         <columnResizePolicy>
@@ -97,27 +124,27 @@
 
             <!-- TAB 2: QUẢN LÝ NHẬT KÝ HOẠT ĐỘNG -->
             <Tab text="📜 Nhật Ký Hoạt Động (Logs)">
-                <VBox spacing="12.0" style="-fx-padding: 16;">
-                    <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
-                        <TextField fx:id="txtSearchLog" promptText="Lọc theo Username hoặc Hành động..." prefWidth="280.0"
-                                   style="-fx-pref-height: 36; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 0 10;" />
+                <VBox spacing="12.0" style="-fx-padding: 18;">
+                    <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="card" style="-fx-padding: 12 16;">
+                        <TextField fx:id="txtSearchLog" promptText="🔍 Lọc theo Username hoặc Hành động..." prefWidth="300.0"
+                                   styleClass="text-field" />
                         <Button mnemonicParsing="false" onAction="#onSearchLog"
-                                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
-                                text="🔍 Lọc" />
+                                styleClass="button, btn-primary"
+                                text="Lọc" />
                         <Button mnemonicParsing="false" onAction="#onRefreshLogs"
-                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-secondary"
                                 text="🔄 Làm Mới" />
                         <Separator orientation="VERTICAL" prefHeight="25.0" />
                         <Button mnemonicParsing="false" onAction="#onDeleteLog"
-                                style="-fx-background-color: #ef4444; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
-                                text="🗑 Xóa Log Chọn" />
+                                styleClass="button, btn-danger"
+                                text="🗑 Xóa Bản Ghi Log" />
                     </HBox>
 
-                    <TableView fx:id="tvActivityLogs" VBox.vgrow="ALWAYS" style="-fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8;">
+                    <TableView fx:id="tvActivityLogs" VBox.vgrow="ALWAYS" styleClass="table-view">
                         <columns>
                             <TableColumn fx:id="colLogId" prefWidth="60.0" text="ID" />
                             <TableColumn fx:id="colLogUsername" prefWidth="150.0" text="Tài Khoản" />
-                            <TableColumn fx:id="colLogAction" prefWidth="120.0" text="Hành Động" />
+                            <TableColumn fx:id="colLogAction" prefWidth="130.0" text="Hành Động" />
                             <TableColumn fx:id="colLogDetails" prefWidth="350.0" text="Chi Tiết Hoạt Động" />
                             <TableColumn fx:id="colLogCreatedAt" prefWidth="180.0" text="Thời Gian" />
                         </columns>
@@ -130,24 +157,24 @@
 
             <!-- TAB 3: LỊCH SỬ TIN NHẮN CHAT -->
             <Tab text="💬 Lịch Sử Tin Nhắn">
-                <VBox spacing="12.0" style="-fx-padding: 16;">
-                    <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
-                        <TextField fx:id="txtSearchChat" promptText="Lọc theo người gửi, người nhận, nội dung..." prefWidth="320.0"
-                                   style="-fx-pref-height: 36; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 0 10;" />
+                <VBox spacing="12.0" style="-fx-padding: 18;">
+                    <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="card" style="-fx-padding: 12 16;">
+                        <TextField fx:id="txtSearchChat" promptText="🔍 Lọc theo người gửi, người nhận, nội dung..." prefWidth="340.0"
+                                   styleClass="text-field" />
                         <Button mnemonicParsing="false" onAction="#onSearchChat"
-                                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
-                                text="🔍 Lọc Tin Nhắn" />
+                                styleClass="button, btn-primary"
+                                text="Lọc Tin Nhắn" />
                         <Button mnemonicParsing="false" onAction="#onRefreshChat"
-                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-secondary"
                                 text="🔄 Làm Mới" />
                     </HBox>
 
-                    <TableView fx:id="tvChatMessages" VBox.vgrow="ALWAYS" style="-fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8;">
+                    <TableView fx:id="tvChatMessages" VBox.vgrow="ALWAYS" styleClass="table-view">
                         <columns>
                             <TableColumn fx:id="colChatId" prefWidth="60.0" text="ID" />
                             <TableColumn fx:id="colChatSender" prefWidth="140.0" text="Người Gửi" />
                             <TableColumn fx:id="colChatReceiver" prefWidth="140.0" text="Người Nhận" />
-                            <TableColumn fx:id="colChatMessage" prefWidth="380.0" text="Nội Dung Tin Nhắn" />
+                            <TableColumn fx:id="colChatMessage" prefWidth="380.0" text="Nội Dung Tin Nhắn (Đã mã hóa AES trong DB)" />
                             <TableColumn fx:id="colChatCreatedAt" prefWidth="180.0" text="Thời Gian" />
                         </columns>
                         <columnResizePolicy>
@@ -159,19 +186,19 @@
 
             <!-- TAB 4: LỊCH SỬ TRUYỀN FILE P2P -->
             <Tab text="📁 Lịch Sử Truyền File">
-                <VBox spacing="12.0" style="-fx-padding: 16;">
-                    <HBox alignment="CENTER_LEFT" spacing="10.0" style="-fx-background-color: #ffffff; -fx-padding: 12; -fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
-                        <TextField fx:id="txtSearchFile" promptText="Lọc theo tên file, người gửi/nhận..." prefWidth="300.0"
-                                   style="-fx-pref-height: 36; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 0 10;" />
+                <VBox spacing="12.0" style="-fx-padding: 18;">
+                    <HBox alignment="CENTER_LEFT" spacing="10.0" styleClass="card" style="-fx-padding: 12 16;">
+                        <TextField fx:id="txtSearchFile" promptText="🔍 Lọc theo tên file, người gửi/nhận..." prefWidth="320.0"
+                                   styleClass="text-field" />
                         <Button mnemonicParsing="false" onAction="#onSearchFile"
-                                style="-fx-background-color: #3b82f6; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
-                                text="🔍 Lọc" />
+                                styleClass="button, btn-primary"
+                                text="Lọc" />
                         <Button mnemonicParsing="false" onAction="#onRefreshFiles"
-                                style="-fx-background-color: #64748b; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-pref-height: 36;"
+                                styleClass="button, btn-secondary"
                                 text="🔄 Làm Mới" />
                     </HBox>
 
-                    <TableView fx:id="tvFileTransfers" VBox.vgrow="ALWAYS" style="-fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8;">
+                    <TableView fx:id="tvFileTransfers" VBox.vgrow="ALWAYS" styleClass="table-view">
                         <columns>
                             <TableColumn fx:id="colFileId" prefWidth="60.0" text="ID" />
                             <TableColumn fx:id="colFileSender" prefWidth="130.0" text="Người Gửi" />

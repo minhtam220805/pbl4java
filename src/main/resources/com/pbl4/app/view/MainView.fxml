@@ -11,154 +11,233 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Priority?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<BorderPane prefHeight="700.0" prefWidth="1020.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-            fx:controller="com.pbl4.app.controller.MainController">
+<BorderPane prefHeight="740.0" prefWidth="1080.0"
+            xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="com.pbl4.app.controller.MainController"
+            stylesheets="@../style/theme.css"
+            style="-fx-background-color: #f8fafc;">
 
     <!-- Top Bar: Header hiện đại -->
     <top>
-        <HBox alignment="CENTER_LEFT" prefHeight="58.0" spacing="15.0"
-              style="-fx-background-color: #1e293b; -fx-padding: 10 24;" BorderPane.alignment="CENTER">
-            <Label text="PBL4 Chat &amp; P2P Transfer" textFill="WHITE">
-                <font>
-                    <Font name="System Bold" size="18.0" />
-                </font>
-            </Label>
-            <Separator orientation="VERTICAL" prefHeight="25.0" style="-fx-opacity: 0.3;" />
-            <Label fx:id="lblCurrentUser" text="Tài khoản: ..." textFill="#94a3b8">
-                <font>
-                    <Font name="System Bold" size="13.0" />
-                </font>
-            </Label>
-            <Label fx:id="lblDbStatus" text="● MySQL: Đã kết nối" textFill="#22c55e">
-                <font>
-                    <Font size="12.0" />
-                </font>
-            </Label>
-            <HBox alignment="CENTER_RIGHT" spacing="10.0" HBox.hgrow="ALWAYS">
-                <!-- Nút dành riêng cho ADMIN (ẩn đối với USER thường) -->
+        <HBox alignment="CENTER_LEFT" prefHeight="62.0" spacing="16.0"
+              style="-fx-background-color: #0f172a; -fx-padding: 10 24;" BorderPane.alignment="CENTER">
+            
+            <!-- Logo & Brand -->
+            <HBox alignment="CENTER_LEFT" spacing="10.0">
+                <StackPane prefHeight="38.0" prefWidth="38.0"
+                           style="-fx-background-color: linear-gradient(to bottom right, #3b82f6, #1d4ed8); -fx-background-radius: 10;">
+                    <Label text="⚡" textFill="WHITE">
+                        <font><Font size="18.0" /></font>
+                    </Label>
+                </StackPane>
+                <VBox alignment="CENTER_LEFT" spacing="1.0">
+                    <Label text="PBL4 CHAT &amp; P2P" textFill="WHITE">
+                        <font>
+                            <Font name="System Bold" size="16.0" />
+                        </font>
+                    </Label>
+                    <Label text="Mã hóa AES-128 | Socket P2P" textFill="#94a3b8">
+                        <font><Font size="10.5" /></font>
+                    </Label>
+                </VBox>
+            </HBox>
+
+            <Separator orientation="VERTICAL" prefHeight="26.0" style="-fx-opacity: 0.25;" />
+
+            <!-- Thông tin User đang đăng nhập -->
+            <HBox alignment="CENTER_LEFT" spacing="8.0"
+                  style="-fx-background-color: rgba(255, 255, 255, 0.08); -fx-background-radius: 20; -fx-padding: 4 12;">
+                <Label text="👤" textFill="#38bdf8" />
+                <Label fx:id="lblCurrentUser" text="Tài khoản: ..." textFill="#f1f5f9">
+                    <font>
+                        <Font name="System Bold" size="12.5" />
+                    </font>
+                </Label>
+            </HBox>
+
+            <!-- Trạng thái CSDL / Server -->
+            <HBox alignment="CENTER_LEFT" spacing="6.0"
+                  style="-fx-background-color: rgba(16, 185, 129, 0.12); -fx-background-radius: 20; -fx-padding: 4 12;">
+                <Label fx:id="lblDbStatus" text="● MySQL: Đã kết nối" textFill="#34d399">
+                    <font>
+                        <Font name="System Bold" size="11.5" />
+                    </font>
+                </Label>
+            </HBox>
+
+            <Region HBox.hgrow="ALWAYS" />
+
+            <!-- Nút điều hướng góc phải -->
+            <HBox alignment="CENTER_RIGHT" spacing="10.0">
+                <!-- Nút dành riêng cho ADMIN -->
                 <Button fx:id="btnAdminPanel" mnemonicParsing="false" onAction="#onOpenAdminPanel"
-                        style="-fx-background-color: #f59e0b; -fx-text-fill: #1e293b; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 14;"
+                        styleClass="button, btn-warning"
                         text="👑 Trang Quản Trị" />
+                
                 <Button mnemonicParsing="false" onAction="#onOpenSettings"
-                        style="-fx-background-color: #334155; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 14;"
+                        styleClass="button, btn-secondary"
                         text="⚙ Cài Đặt" />
+                
                 <Button mnemonicParsing="false" onAction="#onLogout"
-                        style="-fx-background-color: #dc2626; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 14;"
-                        text="Đăng Xuất" />
+                        styleClass="button, btn-danger"
+                        text="Đăng Xuất 🚪" />
             </HBox>
         </HBox>
     </top>
 
     <!-- Center: Chia 2 cột -->
     <center>
-        <SplitPane dividerPositions="0.27" BorderPane.alignment="CENTER" style="-fx-box-border: transparent;">
+        <SplitPane dividerPositions="0.28" BorderPane.alignment="CENTER" style="-fx-box-border: transparent; -fx-background-color: transparent;">
             <items>
-                <!-- Bên Trái: Danh Sách Phòng Chat & Người Dùng -->
-                <VBox spacing="10.0" style="-fx-background-color: #f8fafc; -fx-padding: 14;">
-                    <Label text="HỘI THOẠI &amp; BẠN BÈ" textFill="#475569">
-                        <font>
-                            <Font name="System Bold" size="12.0" />
-                        </font>
-                    </Label>
+                <!-- Bên Trái: Danh Sách Hội Thoại & Người Dùng -->
+                <VBox spacing="12.0" style="-fx-background-color: #ffffff; -fx-padding: 16; -fx-border-color: transparent #e2e8f0 transparent transparent;">
+                    <HBox alignment="CENTER_LEFT" spacing="8.0">
+                        <Label text="DANH SÁCH HỘI THOẠI" textFill="#475569">
+                            <font>
+                                <Font name="System Bold" size="12.0" />
+                            </font>
+                        </Label>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label text="● Trực tuyến" textFill="#10b981">
+                            <font><Font size="11.0" /></font>
+                        </Label>
+                    </HBox>
                     
                     <!-- Danh sách người dùng và phòng chat -->
                     <ListView fx:id="lvChatTargets" VBox.vgrow="ALWAYS"
-                              style="-fx-background-radius: 8; -fx-border-color: #cbd5e1; -fx-border-radius: 8; -fx-control-inner-background: #ffffff;" />
+                              style="-fx-background-color: #f8fafc; -fx-border-color: #e2e8f0; -fx-border-radius: 10; -fx-background-radius: 10;" />
                     
-                    <VBox spacing="4.0" style="-fx-background-color: #f1f5f9; -fx-padding: 8 10; -fx-background-radius: 6;">
-                        <Label text="💡 Hướng dẫn:" textFill="#334155">
+                    <!-- Hướng dẫn sử dụng nhanh -->
+                    <VBox spacing="4.0" style="-fx-background-color: #f0fdf4; -fx-border-color: #bbf7d0; -fx-border-radius: 8; -fx-background-radius: 8; -fx-padding: 10 12;">
+                        <Label text="💡 Hướng dẫn nhanh:" textFill="#15803d">
                             <font>
-                                <Font name="System Bold" size="11.0" />
+                                <Font name="System Bold" size="11.5" />
                             </font>
                         </Label>
-                        <Label text="- Bấm 'Phòng Chat Chung' để chat nhóm." textFill="#64748b">
+                        <Label text="• Chọn 'Phòng Chat Chung' để nhắn cả nhóm." textFill="#166534">
                             <font><Font size="11.0" /></font>
                         </Label>
-                        <Label text="- Chọn 1 người dùng để chat riêng &amp; gửi file P2P." textFill="#64748b">
+                        <Label text="• Chọn 1 người để chat mật &amp; truyền file P2P." textFill="#166534">
                             <font><Font size="11.0" /></font>
                         </Label>
                     </VBox>
                 </VBox>
 
                 <!-- Bên Phải: Toàn bộ khu vực Chat & Truyền File P2P -->
-                <VBox spacing="12.0" style="-fx-background-color: #ffffff; -fx-padding: 16;">
+                <VBox spacing="12.0" style="-fx-background-color: #f8fafc; -fx-padding: 18;">
                     
                     <!-- Header của phòng chat đang chọn -->
-                    <HBox alignment="CENTER_LEFT" spacing="10.0"
-                          style="-fx-background-color: #f1f5f9; -fx-padding: 10 14; -fx-background-radius: 8;">
-                        <Label fx:id="lblChatHeader" text="💬 Đang trò chuyện: Phòng Chat Chung (ALL)" textFill="#1e293b" HBox.hgrow="ALWAYS">
-                            <font>
-                                <Font name="System Bold" size="14.0" />
-                            </font>
-                        </Label>
-                        <HBox alignment="CENTER_RIGHT" HBox.hgrow="ALWAYS">
-                            <Label fx:id="lblHistoryStatus" text="⬆ Cuộn chuột lên đỉnh để tải tin nhắn cũ" textFill="#64748b">
+                    <HBox alignment="CENTER_LEFT" spacing="12.0" styleClass="card"
+                          style="-fx-padding: 12 18;">
+                        <StackPane prefHeight="36.0" prefWidth="36.0"
+                                   style="-fx-background-color: #e0f2fe; -fx-background-radius: 18;">
+                            <Label text="💬" textFill="#0284c7">
+                                <font><Font size="16.0" /></font>
+                            </Label>
+                        </StackPane>
+                        <VBox spacing="2.0">
+                            <Label fx:id="lblChatHeader" text="💬 Đang trò chuyện: Phòng Chat Chung (ALL)" textFill="#0f172a">
                                 <font>
-                                    <Font size="11.0" />
+                                    <Font name="System Bold" size="14.0" />
                                 </font>
                             </Label>
-                        </HBox>
+                            <Label text="Tin nhắn tự động mã hóa AES 128-bit trước khi truyền" textFill="#64748b">
+                                <font><Font size="11.0" /></font>
+                            </Label>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS" />
+                        <Label fx:id="lblHistoryStatus" text="⬆ Cuộn chuột lên đỉnh để tải tin nhắn cũ" textFill="#64748b">
+                            <font>
+                                <Font size="11.5" />
+                            </font>
+                        </Label>
                     </HBox>
 
-                    <!-- Danh sách tin nhắn chat (ListView hỗ trợ Scroll Lazy Loading) -->
+                    <!-- Danh sách tin nhắn chat (ListView Chat Bubbles) -->
                     <ListView fx:id="lvChatMessages" VBox.vgrow="ALWAYS"
-                              style="-fx-background-radius: 8; -fx-border-color: #e2e8f0; -fx-border-radius: 8; -fx-control-inner-background: #fbfcfd;" />
+                              style="-fx-background-color: #ffffff; -fx-background-radius: 12; -fx-border-color: #e2e8f0; -fx-border-radius: 12; -fx-padding: 6;" />
+
+                    <!-- Quick Emoji Bar -->
+                    <HBox alignment="CENTER_LEFT" spacing="6.0">
+                        <Label text="Biểu tượng nhanh:" textFill="#64748b">
+                            <font><Font size="11.0" /></font>
+                        </Label>
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="👍" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="❤️" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="😂" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="🎉" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="🔥" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="🚀" styleClass="btn-emoji" />
+                        <Button mnemonicParsing="false" onAction="#onEmojiClick" text="📁" styleClass="btn-emoji" />
+                    </HBox>
 
                     <!-- Khung soạn thảo tin nhắn -->
-                    <HBox spacing="10.0">
-                        <TextField fx:id="txtMessage" promptText="Nhập nội dung tin nhắn..." HBox.hgrow="ALWAYS"
-                                   style="-fx-pref-height: 40; -fx-background-radius: 6; -fx-border-color: #cbd5e1; -fx-border-radius: 6; -fx-padding: 0 12; -fx-font-size: 13;" />
+                    <HBox spacing="10.0" alignment="CENTER">
+                        <TextField fx:id="txtMessage" promptText="Nhập nội dung tin nhắn (Nhấn Enter để gửi)..." HBox.hgrow="ALWAYS"
+                                   prefHeight="42.0" styleClass="text-field" />
                         <Button fx:id="btnSend" defaultButton="true" mnemonicParsing="false" onAction="#onSendMessage"
-                                prefHeight="40.0" prefWidth="95.0"
-                                style="-fx-background-color: #2563eb; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-font-size: 13;"
-                                text="Gửi ✉" />
+                                prefHeight="42.0" prefWidth="105.0"
+                                styleClass="button, btn-primary"
+                                text="Gửi ✈" />
                     </HBox>
 
-                    <!-- Khu vực truyền File P2P -->
-                    <VBox spacing="10.0" style="-fx-background-color: #f8fafc; -fx-padding: 14; -fx-border-color: #e2e8f0; -fx-border-radius: 8;">
+                    <!-- Khu vực truyền File P2P (Hỗ trợ Kéo & Thả Drag and Drop) -->
+                    <VBox fx:id="p2pDropZone" spacing="10.0" styleClass="card"
+                          style="-fx-padding: 14 18; -fx-background-color: #ffffff;">
+                        
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
-                            <Label text="Truyền File Ngang Hàng (P2P File Transfer):" textFill="#1e293b">
+                            <Label text="📦 Truyền File Ngang Hàng (P2P):" textFill="#0f172a">
                                 <font>
                                     <Font name="System Bold" size="13.0" />
                                 </font>
                             </Label>
-                            <Label fx:id="lblTargetReceiver" text="(Đối tác nhận: ALL)" textFill="#2563eb">
+                            <Label fx:id="lblTargetReceiver" text="(Đối tác nhận: ALL)" textFill="#3b82f6">
                                 <font>
                                     <Font name="System Bold" size="12.0" />
                                 </font>
+                            </Label>
+                            <Region HBox.hgrow="ALWAYS" />
+                            <Label text="🖱️ Kéo thả file/thư mục vào đây để chọn" textFill="#94a3b8">
+                                <font><Font size="11.0" /></font>
                             </Label>
                         </HBox>
 
                         <HBox alignment="CENTER_LEFT" spacing="10.0">
                             <Button fx:id="btnChooseFile" mnemonicParsing="false" onAction="#onChooseFile"
-                                    style="-fx-background-color: #059669; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 12;"
+                                    styleClass="button, btn-success"
                                     text="📁 Chọn File" />
                             <Button fx:id="btnChooseFolder" mnemonicParsing="false" onAction="#onChooseFolder"
-                                    style="-fx-background-color: #0d9488; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 12;"
+                                    styleClass="button, btn-secondary"
                                     text="📂 Chọn Thư Mục" />
                             <Button fx:id="btnSendFile" mnemonicParsing="false" onAction="#onSendFileP2P"
-                                    style="-fx-background-color: #ea580c; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 6; -fx-cursor: hand; -fx-padding: 6 14;"
+                                    styleClass="button, btn-primary"
                                     text="🚀 Gửi P2P Ngay" />
+                            
+                            <Region HBox.hgrow="ALWAYS" />
+
+                            <Label fx:id="lblSelectedFile" text="Chưa chọn tệp tin hoặc thư mục nào." textFill="#64748b">
+                                <font>
+                                    <Font size="12.0" />
+                                </font>
+                            </Label>
                         </HBox>
 
-                        <Label fx:id="lblSelectedFile" text="Chưa chọn tệp tin hoặc thư mục nào." textFill="#64748b">
-                            <font>
-                                <Font size="12.0" />
-                            </font>
-                        </Label>
-
                         <!-- Thanh Tiến Trình (ProgressBar) -->
-                        <ProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" prefHeight="16.0" progress="0.0"
-                                     style="-fx-accent: #10b981;" />
+                        <ProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" prefHeight="14.0" progress="0.0"
+                                     styleClass="progress-bar" />
 
-                        <Label fx:id="lblProgressStatus" text="Trạng thái P2P: Sẵn sàng." textFill="#64748b">
-                            <font>
-                                <Font size="12.0" />
-                            </font>
-                        </Label>
+                        <HBox alignment="CENTER_LEFT">
+                            <Label fx:id="lblProgressStatus" text="Trạng thái P2P: Sẵn sàng." textFill="#64748b">
+                                <font>
+                                    <Font size="11.5" />
+                                </font>
+                            </Label>
+                        </HBox>
                     </VBox>
 
                 </VBox>

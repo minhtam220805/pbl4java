@@ -1,6 +1,7 @@
 package com.pbl4.app.dao;
 
 import com.pbl4.app.model.User;
+import com.pbl4.app.security.PasswordHelper;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -23,12 +24,18 @@ public class UserDAO {
      * @return true nếu thông tin hợp lệ, ngược lại false
      */
     public boolean login(String username, String password) {
+        if (username == null || username.trim().isEmpty() || password == null || password.isEmpty()) {
+            return false;
+        }
+        String hashedPassword = PasswordHelper.hashPassword(password.trim());
+        if (hashedPassword == null) return false;
+
         String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(1, username.trim());
+            stmt.setString(2, hashedPassword);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
@@ -46,11 +53,14 @@ public class UserDAO {
      * @return Role của người dùng (mặc định "USER" nếu không tìm thấy)
      */
     public String getUserRole(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            return "USER";
+        }
         String sql = "SELECT role FROM users WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username);
+            stmt.setString(1, username.trim());
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -71,11 +81,14 @@ public class UserDAO {
      * @return true nếu đã tồn tại
      */
     public boolean userExists(String username) {
+        if (username == null || username.trim().isEmpty()) {
+            return false;
+        }
         String sql = "SELECT id FROM users WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username);
+            stmt.setString(1, username.trim());
 
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next();
@@ -94,7 +107,19 @@ public class UserDAO {
      * @return true nếu đăng ký thành công, ngược lại false
      */
     public boolean register(String username, String password) {
-        if (userExists(username)) {
+        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
+            return false;
+        }
+        String cleanUser = username.trim();
+        String cleanPass = password.trim();
+
+        if (userExists(cleanUser)) {
+            return false;
+        }
+
+        String hashedPassword = PasswordHelper.hashPassword(cleanPass);
+        if (hashedPassword == null) {
+            System.err.println("Lỗi băm mật khẩu khi đăng ký tài khoản: " + username);
             return false;
         }
 
@@ -102,8 +127,8 @@ public class UserDAO {
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(1, cleanUser);
+            stmt.setString(2, hashedPassword);  // Lưu SHA-256 hash, KHÔNG lưu plain-text
 
             int rowsAffected = stmt.executeUpdate();
             return rowsAffected > 0;
@@ -174,15 +199,21 @@ public class UserDAO {
      * @return true nếu thêm thành công
      */
     public boolean addUser(String username, String password, String role) {
-        if (userExists(username)) {
+        if (username == null || username.trim().isEmpty() || password == null || password.trim().isEmpty()) {
             return false;
         }
+        if (userExists(username.trim())) {
+            return false;
+        }
+        String hashedPassword = PasswordHelper.hashPassword(password.trim());
+        if (hashedPassword == null) return false;
+
         String sql = "INSERT INTO users (username, password, role, status) VALUES (?, ?, ?, 'OFFLINE')";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username);
-            stmt.setString(2, password);
+            stmt.setString(1, username.trim());
+            stmt.setString(2, hashedPassword);  // Lưu SHA-256 hash
             stmt.setString(3, (role != null && !role.isEmpty()) ? role.toUpperCase() : "USER");
 
             return stmt.executeUpdate() > 0;
@@ -224,11 +255,17 @@ public class UserDAO {
      * @return true nếu đổi thành công
      */
     public boolean resetPassword(int id, String newPassword) {
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            return false;
+        }
+        String hashedPassword = PasswordHelper.hashPassword(newPassword.trim());
+        if (hashedPassword == null) return false;
+
         String sql = "UPDATE users SET password = ? WHERE id = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, newPassword);
+            stmt.setString(1, hashedPassword);  // Lưu SHA-256 hash
             stmt.setInt(2, id);
 
             return stmt.executeUpdate() > 0;

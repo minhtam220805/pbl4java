@@ -14,8 +14,11 @@ import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
@@ -43,6 +46,9 @@ public class MainController {
 
     @FXML
     private ListView<String> lvChatMessages;
+
+    @FXML
+    private VBox p2pDropZone;
 
     @FXML
     private TextField txtMessage;
@@ -111,6 +117,10 @@ public class MainController {
     private File selectedFileOrDir;
     private final P2PFileTransfer p2pFileTransfer = new P2PFileTransfer();
 
+    // Dùng cho luồng gửi file P2P không đồng bộ (chờ server trả về IP:port)
+    private volatile File   pendingFileToSend     = null;
+    private volatile String pendingFileSendTarget = null;
+
     private static final String SECRET_KEY = "PBL4_SECRET_KEY_2026";
 
     @FXML
@@ -127,9 +137,13 @@ public class MainController {
             }
         });
 
+        // Thiết lập giao diện tùy biến cho danh sách người dùng và bong bóng chat
+        setupTargetCellFactory();
+        setupMessageCellFactory();
+        setupDragAndDrop();
+
         // Cài đặt danh sách tin nhắn chat
         lvChatMessages.setItems(chatMessagesList);
-        setupMessageCellFactory();
 
         // Gắn sự kiện cuộn chuột lên đỉnh để Lazy Load
         attachScrollEventToListView();
@@ -140,7 +154,68 @@ public class MainController {
     }
 
     /**
-     * Tùy biến hiển thị từng dòng tin nhắn trong ListView
+     * Tùy biến hiển thị danh sách người dùng và phòng chat với Avatar, Tên và Trạng thái
+     */
+    private void setupTargetCellFactory() {
+        lvChatTargets.setCellFactory(listView -> new ListCell<>() {
+            @Override
+            protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                if (empty || item == null) {
+                    setText(null);
+                    setGraphic(null);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
+
+                HBox cell = new HBox(10);
+                cell.setAlignment(Pos.CENTER_LEFT);
+                cell.setStyle("-fx-padding: 8 10; -fx-cursor: hand;");
+
+                boolean isGroup = item.contains("Phòng Chat Chung") || GROUP_CHAT_TARGET.equals(item);
+
+                StackPane iconPane = new StackPane();
+                iconPane.setPrefSize(34, 34);
+                iconPane.setMinSize(34, 34);
+                iconPane.setMaxSize(34, 34);
+
+                VBox textBox = new VBox(2);
+                textBox.setAlignment(Pos.CENTER_LEFT);
+
+                if (isGroup) {
+                    iconPane.setStyle("-fx-background-color: #e0f2fe; -fx-background-radius: 17;");
+                    Label ico = new Label("👥");
+                    ico.setStyle("-fx-font-size: 16px;");
+                    iconPane.getChildren().add(ico);
+
+                    Label title = new Label("Phòng Chat Chung");
+                    title.setStyle("-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 13px;");
+                    Label sub = new Label("Nhóm tất cả thành viên");
+                    sub.setStyle("-fx-text-fill: #64748b; -fx-font-size: 11px;");
+                    textBox.getChildren().addAll(title, sub);
+                } else {
+                    String initial = item.substring(0, 1).toUpperCase();
+                    iconPane.setStyle("-fx-background-color: " + getAvatarColor(item) + "; -fx-background-radius: 17;");
+                    Label ico = new Label(initial);
+                    ico.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 13px;");
+                    iconPane.getChildren().add(ico);
+
+                    Label title = new Label(item);
+                    title.setStyle("-fx-font-weight: bold; -fx-text-fill: #0f172a; -fx-font-size: 13px;");
+                    Label sub = new Label("● Trực tuyến | P2P Sẵn sàng");
+                    sub.setStyle("-fx-text-fill: #10b981; -fx-font-size: 11px;");
+                    textBox.getChildren().addAll(title, sub);
+                }
+
+                cell.getChildren().addAll(iconPane, textBox);
+                setGraphic(cell);
+                setText(null);
+            }
+        });
+    }
+
+    /**
+     * Tùy biến hiển thị từng dòng tin nhắn dưới dạng Chat Bubbles hiện đại (như Telegram/Messenger)
      */
     private void setupMessageCellFactory() {
         lvChatMessages.setCellFactory(listView -> new ListCell<>() {
@@ -151,21 +226,203 @@ public class MainController {
                     setText(null);
                     setGraphic(null);
                     setStyle("-fx-background-color: transparent;");
+                    return;
+                }
+
+                // Tách thời gian [HH:mm:ss] nếu có
+                String time = "";
+                String raw = item;
+                if (item.matches("^\\[\\d{2}:\\d{2}:\\d{2}\\].*")) {
+                    time = item.substring(1, 9);
+                    raw = item.substring(11).trim();
+                }
+
+                // 1. Tin nhắn hệ thống [Hệ thống]
+                if (raw.contains("[Hệ thống]")) {
+                    HBox box = new HBox();
+                    box.setAlignment(Pos.CENTER);
+                    box.setStyle("-fx-padding: 3 0;");
+
+                    Label badge = new Label("ℹ️ " + raw + (time.isEmpty() ? "" : "  •  " + time));
+                    badge.setStyle("-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-font-weight: bold; " +
+                                   "-fx-background-radius: 14; -fx-padding: 4 14; -fx-font-size: 11.5px;");
+                    box.getChildren().add(badge);
+
+                    setGraphic(box);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
+
+                // 2. Thông báo truyền file P2P [P2P File]
+                if (raw.startsWith("[P2P File]")) {
+                    HBox box = new HBox();
+                    box.setAlignment(Pos.CENTER);
+                    box.setStyle("-fx-padding: 4 0;");
+
+                    Label card = new Label("📦 " + raw.replace("[P2P File]", "").trim() + (time.isEmpty() ? "" : "  •  " + time));
+                    card.setStyle("-fx-background-color: #ecfdf5; -fx-text-fill: #065f46; -fx-font-weight: bold; " +
+                                  "-fx-border-color: #a7f3d0; -fx-border-radius: 10; -fx-background-radius: 10; " +
+                                  "-fx-padding: 6 16; -fx-font-size: 12px;");
+                    box.getChildren().add(card);
+
+                    setGraphic(box);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
+
+                // 3. Tin nhắn gửi đi từ "Bạn" (Căn PHẢI - Bong bóng màu Xanh Dương)
+                boolean isMe = raw.startsWith("Bạn:") || raw.startsWith("[Bạn ->");
+                if (isMe) {
+                    HBox row = new HBox();
+                    row.setAlignment(Pos.CENTER_RIGHT);
+                    row.setStyle("-fx-padding: 3 6 3 40;");
+
+                    VBox bubble = new VBox(3);
+                    bubble.setAlignment(Pos.TOP_RIGHT);
+                    bubble.setStyle("-fx-background-color: linear-gradient(to bottom right, #3b82f6, #2563eb); " +
+                                    "-fx-background-radius: 16 16 3 16; -fx-padding: 8 14; " +
+                                    "-fx-effect: dropshadow(three-pass-box, rgba(37,99,235,0.22), 6, 0, 0, 2);");
+
+                    String msgText = raw;
+                    int colonIdx = raw.indexOf(':');
+                    if (colonIdx != -1) {
+                        msgText = raw.substring(colonIdx + 1).trim();
+                    }
+
+                    Label lblHeader = new Label("Bạn" + (time.isEmpty() ? "" : " • " + time));
+                    lblHeader.setStyle("-fx-text-fill: #bfdbfe; -fx-font-size: 10.5px; -fx-font-weight: bold;");
+
+                    Label lblContent = new Label(msgText);
+                    lblContent.setWrapText(true);
+                    lblContent.setMaxWidth(460);
+                    lblContent.setStyle("-fx-text-fill: #ffffff; -fx-font-size: 13px;");
+
+                    bubble.getChildren().addAll(lblHeader, lblContent);
+                    row.getChildren().add(bubble);
+
+                    setGraphic(row);
+                    setText(null);
+                    setStyle("-fx-background-color: transparent;");
+                    return;
+                }
+
+                // 4. Tin nhắn nhận được từ bạn bè (Căn TRÁI - Bong bóng Thẻ Trắng)
+                HBox row = new HBox(8);
+                row.setAlignment(Pos.TOP_LEFT);
+                row.setStyle("-fx-padding: 3 40 3 6;");
+
+                String sender = "Người dùng";
+                String msgText = raw;
+                boolean isPrivate = raw.contains("[Chat riêng]");
+
+                if (isPrivate) {
+                    String clean = raw.replace("[Chat riêng]", "").trim();
+                    int cIdx = clean.indexOf(':');
+                    if (cIdx != -1) {
+                        sender = clean.substring(0, cIdx).trim();
+                        msgText = clean.substring(cIdx + 1).trim();
+                    }
                 } else {
-                    setText(item);
-                    setWrapText(true);
-                    if (item.contains("[Hệ thống]")) {
-                        setStyle("-fx-text-fill: #0284c7; -fx-font-weight: bold; -fx-padding: 4 8;");
-                    } else if (item.startsWith("[Bạn ->") || item.startsWith("Bạn:")) {
-                        setStyle("-fx-text-fill: #15803d; -fx-font-weight: bold; -fx-padding: 4 8;");
-                    } else if (item.contains("[Chat riêng]")) {
-                        setStyle("-fx-text-fill: #b45309; -fx-font-weight: bold; -fx-padding: 4 8;");
-                    } else {
-                        setStyle("-fx-text-fill: #1e293b; -fx-padding: 4 8;");
+                    int cIdx = raw.indexOf(':');
+                    if (cIdx != -1) {
+                        sender = raw.substring(0, cIdx).trim();
+                        msgText = raw.substring(cIdx + 1).trim();
                     }
                 }
+
+                // Avatar tròn đại diện chữ cái đầu của người gửi
+                String initial = sender.isEmpty() ? "?" : sender.substring(0, 1).toUpperCase();
+                StackPane avatar = new StackPane();
+                avatar.setPrefSize(32, 32);
+                avatar.setMinSize(32, 32);
+                avatar.setMaxSize(32, 32);
+
+                String avatarColor = getAvatarColor(sender);
+                avatar.setStyle("-fx-background-color: " + avatarColor + "; -fx-background-radius: 16;");
+                Label lblInitial = new Label(initial);
+                lblInitial.setStyle("-fx-text-fill: white; -fx-font-weight: bold; -fx-font-size: 12px;");
+                avatar.getChildren().add(lblInitial);
+
+                // Khung Bong Bóng Tin Nhắn
+                VBox bubble = new VBox(3);
+                bubble.setAlignment(Pos.TOP_LEFT);
+                bubble.setStyle("-fx-background-color: #ffffff; -fx-border-color: #e2e8f0; -fx-border-width: 1.2; " +
+                                "-fx-background-radius: 3 16 16 16; -fx-border-radius: 3 16 16 16; -fx-padding: 8 14; " +
+                                "-fx-effect: dropshadow(three-pass-box, rgba(15,23,42,0.04), 4, 0, 0, 1);");
+
+                Label lblSender = new Label((isPrivate ? "🔒 " : "") + sender + (time.isEmpty() ? "" : " • " + time));
+                lblSender.setStyle(isPrivate
+                        ? "-fx-text-fill: #b45309; -fx-font-weight: bold; -fx-font-size: 11px;"
+                        : "-fx-text-fill: #4338ca; -fx-font-weight: bold; -fx-font-size: 11px;");
+
+                Label lblContent = new Label(msgText);
+                lblContent.setWrapText(true);
+                lblContent.setMaxWidth(460);
+                lblContent.setStyle("-fx-text-fill: #0f172a; -fx-font-size: 13px;");
+
+                bubble.getChildren().addAll(lblSender, lblContent);
+                row.getChildren().addAll(avatar, bubble);
+
+                setGraphic(row);
+                setText(null);
+                setStyle("-fx-background-color: transparent;");
             }
         });
+    }
+
+    private String getAvatarColor(String name) {
+        String[] colors = {"#4f46e5", "#059669", "#d97706", "#dc2626", "#7c3aed", "#0284c7", "#db2777"};
+        int hash = Math.abs(name.hashCode());
+        return colors[hash % colors.length];
+    }
+
+    /**
+     * Hỗ trợ Kéo & Thả (Drag and Drop) tệp tin hoặc thư mục trực tiếp vào ứng dụng để gửi P2P
+     */
+    private void setupDragAndDrop() {
+        if (p2pDropZone != null) {
+            p2pDropZone.setOnDragOver(event -> {
+                if (event.getGestureSource() != p2pDropZone && event.getDragboard().hasFiles()) {
+                    event.acceptTransferModes(TransferMode.COPY_OR_MOVE);
+                    if (!p2pDropZone.getStyleClass().contains("drag-active")) {
+                        p2pDropZone.getStyleClass().add("drag-active");
+                    }
+                }
+                event.consume();
+            });
+
+            p2pDropZone.setOnDragExited(event -> {
+                p2pDropZone.getStyleClass().remove("drag-active");
+                event.consume();
+            });
+
+            p2pDropZone.setOnDragDropped(event -> {
+                Dragboard db = event.getDragboard();
+                boolean success = false;
+                if (db.hasFiles() && !db.getFiles().isEmpty()) {
+                    selectedFileOrDir = db.getFiles().get(0);
+                    updateSelectedFileLabel();
+                    success = true;
+                }
+                p2pDropZone.getStyleClass().remove("drag-active");
+                event.setDropCompleted(success);
+                event.consume();
+            });
+        }
+    }
+
+    /**
+     * Chèn emoji nhanh vào ô soạn thảo khi người dùng click
+     */
+    @FXML
+    public void onEmojiClick(ActionEvent event) {
+        if (event.getSource() instanceof Button btn && txtMessage != null) {
+            String emoji = btn.getText();
+            txtMessage.appendText(emoji);
+            txtMessage.requestFocus();
+        }
     }
 
     /**
@@ -377,11 +634,15 @@ public class MainController {
                 String sender = payload.substring(0, firstColon);
                 String msgContent = payload.substring(firstColon + 1);
 
+                // Giải mã AES nếu nội dung được mã hóa
+                String decrypted = AESCrypto.decrypt(msgContent, SECRET_KEY);
+                String displayContent = (decrypted != null) ? decrypted : msgContent;
+
                 String formattedLine;
                 if (sender.equals(currentUsername)) {
-                    formattedLine = "Bạn: " + msgContent;
+                    formattedLine = "Bạn: " + displayContent;
                 } else {
-                    formattedLine = sender + ": " + msgContent;
+                    formattedLine = sender + ": " + displayContent;
                 }
 
                 // Chèn vào phía trên (đầu danh sách) theo yêu cầu Lazy Loading
@@ -428,17 +689,19 @@ public class MainController {
             String payload = message.substring(12);
             int firstColon = payload.indexOf(':');
             if (firstColon != -1) {
-                String sender = payload.substring(0, firstColon);
-                String content = payload.substring(firstColon + 1);
+                String sender     = payload.substring(0, firstColon);
+                String rawContent = payload.substring(firstColon + 1);
 
-                String displayLine = "[Chat riêng] " + sender + ": " + content;
+                // Giải mã AES — nếu thất bại dùng nội dung gốc
+                String decrypted     = AESCrypto.decrypt(rawContent, SECRET_KEY);
+                String displayContent = (decrypted != null) ? decrypted : rawContent;
+
+                String displayLine = "[Chat riêng] " + sender + ": " + displayContent;
 
                 if (sender.equals(currentReceiver)) {
                     appendChatMessage(displayLine);
                 } else {
-                    // Lưu vào cache tin nhắn của người gửi đó
                     messagesCache.computeIfAbsent(sender, k -> new ArrayList<>()).add(displayLine);
-                    // Thông báo ngắn ở phòng hiện tại
                     appendChatMessage("[Có tin nhắn riêng mới từ: " + sender + "]");
                 }
             }
@@ -448,9 +711,14 @@ public class MainController {
             String payload = message.substring(13);
             int firstColon = payload.indexOf(':');
             if (firstColon != -1) {
-                String receiver = payload.substring(0, firstColon);
-                String content = payload.substring(firstColon + 1);
-                String displayLine = "[Bạn -> " + receiver + "]: " + content;
+                String receiver   = payload.substring(0, firstColon);
+                String rawContent = payload.substring(firstColon + 1);
+
+                // Giải mã AES
+                String decrypted     = AESCrypto.decrypt(rawContent, SECRET_KEY);
+                String displayContent = (decrypted != null) ? decrypted : rawContent;
+
+                String displayLine = "[Bạn -> " + receiver + "]: " + displayContent;
 
                 if (receiver.equals(currentReceiver)) {
                     appendChatMessage(displayLine);
@@ -459,10 +727,40 @@ public class MainController {
                 }
             }
         }
+        // 8. Thông tin IP:port P2P của người nhận: P2P_INFO:username:ip:port
+        else if (message.startsWith("P2P_INFO:")) {
+            String[] parts = message.substring(9).split(":", 3);
+            if (parts.length == 3 && pendingFileToSend != null) {
+                String targetIp   = parts[1];
+                int    targetPort;
+                try {
+                    targetPort = Integer.parseInt(parts[2]);
+                } catch (NumberFormatException e) {
+                    return;
+                }
+                File   fileToSend = pendingFileToSend;
+                String receiver   = pendingFileSendTarget;
+                pendingFileToSend     = null;
+                pendingFileSendTarget = null;
+
+                // Thực sự bắt đầu truyền file sau khi biết IP:port chính xác
+                doSendFileP2P(targetIp, targetPort, fileToSend, receiver);
+            }
+        }
+        // 9. Lỗi không lấy được thông tin P2P: P2P_INFO_FAIL:username:reason
+        else if (message.startsWith("P2P_INFO_FAIL:")) {
+            String[] parts = message.substring(14).split(":", 2);
+            String reason = parts.length > 1 ? parts[1] : "Không thể kết nối P2P";
+            pendingFileToSend     = null;
+            pendingFileSendTarget = null;
+            if (lblProgressStatus != null) {
+                lblProgressStatus.setText("❌ Lỗi P2P: " + reason);
+            }
+        }
     }
 
     /**
-     * Gửi tin nhắn chat (tự động phân biệt chat nhóm hoặc chat riêng)
+     * Gửi tin nhắn chat (tự động mã hóa AES trước khi gửi — server chỉ lưu/broadcast của mã hóa)
      */
     @FXML
     public void onSendMessage(ActionEvent event) {
@@ -470,12 +768,14 @@ public class MainController {
         if (msg.isEmpty()) return;
 
         if (writer != null) {
+            // Mã hóa nội dung trước khi gửi — nếu mã hóa thất bại dùng plain-text
+            String encrypted = AESCrypto.encrypt(msg, SECRET_KEY);
+            String payload   = (encrypted != null) ? encrypted : msg;
+
             if ("ALL".equalsIgnoreCase(currentReceiver)) {
-                // Gửi tin nhắn nhóm
-                writer.println("MSG:" + msg);
+                writer.println("MSG:" + payload);
             } else {
-                // Gửi tin nhắn riêng (PRIVATE_MSG:receiver:nội dung)
-                writer.println("PRIVATE_MSG:" + currentReceiver + ":" + msg);
+                writer.println("PRIVATE_MSG:" + currentReceiver + ":" + payload);
             }
             txtMessage.clear();
         }
@@ -492,14 +792,15 @@ public class MainController {
     }
 
     /**
-     * Khởi động bộ nhận P2P đa luồng
+     * Khởi động bộ nhận P2P đa luồng, sau đó đăng ký IP:port với ChatServer
      */
     private void startP2PReceiver() {
-        int p2pPort = Integer.parseInt(SettingController.getProperty("p2p.port", "9999"));
-        String saveDirPath = SettingController.getProperty("save.dir", System.getProperty("user.home") + File.separator + "Downloads");
+        int preferredPort = Integer.parseInt(SettingController.getProperty("p2p.port", "9999"));
+        String saveDirPath = SettingController.getProperty("save.dir",
+                System.getProperty("user.home") + File.separator + "Downloads");
         File saveDir = new File(saveDirPath);
 
-        p2pFileTransfer.startReceiver(p2pPort, saveDir, new P2PFileTransfer.TransferListener() {
+        int boundPort = p2pFileTransfer.startReceiver(preferredPort, saveDir, new P2PFileTransfer.TransferListener() {
             @Override
             public void onProgress(double progress, long bytesTransferred, long totalBytes) {
                 Platform.runLater(() -> {
@@ -529,6 +830,12 @@ public class MainController {
                 });
             }
         });
+
+        int actualPort = (boundPort > 0) ? boundPort : preferredPort;
+        // Đăng ký thông tin P2P (IP lấy tự động bắt Socket, gửi port thực tế đã bind)
+        if (writer != null) {
+            writer.println("P2P_REGISTER:" + actualPort);
+        }
     }
 
     /**
@@ -567,7 +874,8 @@ public class MainController {
     }
 
     /**
-     * Bắt đầu truyền file P2P
+     * Bắt đầu truyền file P2P:
+     * Gửi yêu cầu GET_P2P_INFO lên ChatServer để lấy IP và Port thực tế của đối tác
      */
     @FXML
     public void onSendFileP2P(ActionEvent event) {
@@ -581,14 +889,40 @@ public class MainController {
             return;
         }
 
-        String targetIp = SettingController.getProperty("server.ip", "127.0.0.1");
-        int targetPort = Integer.parseInt(SettingController.getProperty("p2p.port", "9999"));
+        if (progressBar != null) progressBar.setProgress(0.0);
+        if (lblProgressStatus != null) {
+            lblProgressStatus.setText("Đang yêu cầu kết nối P2P tới " + currentReceiver + "...");
+        }
+
+        // Lưu trạng thái file cần gửi
+        pendingFileToSend = selectedFileOrDir;
+        pendingFileSendTarget = currentReceiver;
+
+        if (writer != null) {
+            writer.println("GET_P2P_INFO:" + currentReceiver);
+        } else {
+            // Fallback nếu không có kết nối server
+            String targetIp = SettingController.getProperty("server.ip", "127.0.0.1");
+            int targetPort = Integer.parseInt(SettingController.getProperty("p2p.port", "9999"));
+            doSendFileP2P(targetIp, targetPort, pendingFileToSend, pendingFileSendTarget);
+            pendingFileToSend = null;
+            pendingFileSendTarget = null;
+        }
+    }
+
+    /**
+     * Thực hiện truyền file P2P sau khi có thông tin IP:Port đích
+     */
+    private void doSendFileP2P(String targetIp, int targetPort, File fileToSend, String receiver) {
+        if (fileToSend == null || receiver == null) return;
 
         if (progressBar != null) progressBar.setProgress(0.0);
-        if (lblProgressStatus != null) lblProgressStatus.setText("Bắt đầu gửi tới " + currentReceiver + "...");
+        if (lblProgressStatus != null) {
+            lblProgressStatus.setText("Đang kết nối P2P tới " + receiver + " (" + targetIp + ":" + targetPort + ")...");
+        }
 
-        // Gửi file qua P2P, truyền kèm currentReceiver để P2PFileTransfer tự bắn FILE_SUCCESS lên Server khi 100%
-        p2pFileTransfer.sendFile(targetIp, targetPort, selectedFileOrDir, currentReceiver, new P2PFileTransfer.TransferListener() {
+        // Gửi file qua P2P, truyền kèm receiver để P2PFileTransfer tự bắn FILE_SUCCESS lên Server khi 100%
+        p2pFileTransfer.sendFile(targetIp, targetPort, fileToSend, receiver, new P2PFileTransfer.TransferListener() {
             @Override
             public void onProgress(double progress, long bytesTransferred, long totalBytes) {
                 Platform.runLater(() -> {
@@ -607,7 +941,7 @@ public class MainController {
                 Platform.runLater(() -> {
                     if (progressBar != null) progressBar.setProgress(1.0);
                     if (lblProgressStatus != null) lblProgressStatus.setText(message);
-                    appendChatMessage("[P2P File] " + message + " -> " + currentReceiver);
+                    appendChatMessage("[P2P File] " + message + " -> " + receiver);
                 });
             }
 
@@ -653,6 +987,7 @@ public class MainController {
             Stage stage = (Stage) btnAdminPanel.getScene().getWindow();
             stage.setTitle("PBL4 - Trang Quản Trị Hệ Thống (ADMIN)");
             stage.setScene(new Scene(root, 1050, 720));
+            stage.setOnCloseRequest(e -> adminController.onLogout(null));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();

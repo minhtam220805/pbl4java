@@ -1,0 +1,27 @@
+# Maven build output
+target/
+*.class
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+hs_err_pid*
+replay_pid*
+
+# OS Files
+Thumbs.db
+.DS_Store

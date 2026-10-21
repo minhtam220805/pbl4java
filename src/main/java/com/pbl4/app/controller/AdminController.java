@@ -135,6 +135,20 @@ public class AdminController {
         setupChatMessageTable();
         setupFileTransferTable();
 
+        // Tự động tìm kiếm tức thì khi người dùng gõ phím (Real-time Filter)
+        if (txtSearchUser != null) {
+            txtSearchUser.textProperty().addListener((obs, oldVal, newVal) -> onSearchUser(null));
+        }
+        if (txtSearchLog != null) {
+            txtSearchLog.textProperty().addListener((obs, oldVal, newVal) -> onSearchLog(null));
+        }
+        if (txtSearchChat != null) {
+            txtSearchChat.textProperty().addListener((obs, oldVal, newVal) -> onSearchChat(null));
+        }
+        if (txtSearchFile != null) {
+            txtSearchFile.textProperty().addListener((obs, oldVal, newVal) -> onSearchFile(null));
+        }
+
         // Tải dữ liệu ban đầu
         onRefreshUsers(null);
         onRefreshLogs(null);
@@ -160,6 +174,46 @@ public class AdminController {
         colUserStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colUserCreatedAt.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
 
+        // Badge giao diện cho Cột Vai trò (Role)
+        colUserRole.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String role, boolean empty) {
+                super.updateItem(role, empty);
+                if (empty || role == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    boolean isAdmin = "ADMIN".equalsIgnoreCase(role);
+                    Label badge = new Label(isAdmin ? "👑 ADMIN" : "👤 USER");
+                    badge.setStyle(isAdmin
+                            ? "-fx-background-color: #fef3c7; -fx-text-fill: #b45309; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10; -fx-font-size: 11px;"
+                            : "-fx-background-color: #e0f2fe; -fx-text-fill: #0369a1; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10; -fx-font-size: 11px;");
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
+
+        // Badge giao diện cho Cột Trạng thái (Status)
+        colUserStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    boolean isOnline = "ONLINE".equalsIgnoreCase(status);
+                    Label badge = new Label(isOnline ? "🟢 ONLINE" : "⚪ OFFLINE");
+                    badge.setStyle(isOnline
+                            ? "-fx-background-color: #d1fae5; -fx-text-fill: #065f46; -fx-font-weight: bold; -fx-background-radius: 12; -fx-padding: 3 10; -fx-font-size: 11px;"
+                            : "-fx-background-color: #f1f5f9; -fx-text-fill: #64748b; -fx-background-radius: 12; -fx-padding: 3 10; -fx-font-size: 11px;");
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
+
         filteredUsers = new FilteredList<>(userList, p -> true);
         tvUsers.setItems(filteredUsers);
     }
@@ -170,6 +224,28 @@ public class AdminController {
         colLogAction.setCellValueFactory(new PropertyValueFactory<>("action"));
         colLogDetails.setCellValueFactory(new PropertyValueFactory<>("details"));
         colLogCreatedAt.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+
+        colLogAction.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String action, boolean empty) {
+                super.updateItem(action, empty);
+                if (empty || action == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label(action);
+                    String style = switch (action.toUpperCase()) {
+                        case "LOGIN", "REGISTER" -> "-fx-background-color: #d1fae5; -fx-text-fill: #065f46;";
+                        case "LOGOUT" -> "-fx-background-color: #fee2e2; -fx-text-fill: #991b1b;";
+                        case "ADMIN_DELETE_USER" -> "-fx-background-color: #fef2f2; -fx-text-fill: #dc2626;";
+                        default -> "-fx-background-color: #f1f5f9; -fx-text-fill: #334155;";
+                    };
+                    badge.setStyle(style + " -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 8; -fx-font-size: 11px;");
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
 
         filteredLogs = new FilteredList<>(activityLogList, p -> true);
         tvActivityLogs.setItems(filteredLogs);
@@ -194,6 +270,22 @@ public class AdminController {
         colFileSize.setCellValueFactory(new PropertyValueFactory<>("fileSize"));
         colFileStatus.setCellValueFactory(new PropertyValueFactory<>("status"));
         colFileCreatedAt.setCellValueFactory(new PropertyValueFactory<>("createdAt"));
+
+        colFileStatus.setCellFactory(col -> new TableCell<>() {
+            @Override
+            protected void updateItem(String status, boolean empty) {
+                super.updateItem(status, empty);
+                if (empty || status == null) {
+                    setText(null);
+                    setGraphic(null);
+                } else {
+                    Label badge = new Label("SUCCESS".equalsIgnoreCase(status) ? "✅ Thành công" : status);
+                    badge.setStyle("-fx-background-color: #d1fae5; -fx-text-fill: #047857; -fx-font-weight: bold; -fx-background-radius: 10; -fx-padding: 3 8; -fx-font-size: 11px;");
+                    setGraphic(badge);
+                    setText(null);
+                }
+            }
+        });
 
         filteredFiles = new FilteredList<>(fileTransferList, p -> true);
         tvFileTransfers.setItems(filteredFiles);
@@ -449,6 +541,7 @@ public class AdminController {
             Stage stage = (Stage) btnGoToChat.getScene().getWindow();
             stage.setTitle("PBL4 Chat & P2P File Transfer - " + adminUsername + " (Admin)");
             stage.setScene(new Scene(root, 1020, 700));
+            stage.setOnCloseRequest(e -> mainController.shutdown());
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();

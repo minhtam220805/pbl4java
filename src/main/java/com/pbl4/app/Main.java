@@ -19,10 +19,11 @@ public class Main extends Application {
             FXMLLoader loader = new FXMLLoader(getClass().getResource("/com/pbl4/app/view/LoginView.fxml"));
             Parent root = loader.load();
 
-            Scene scene = new Scene(root, 420, 480);
+            Scene scene = new Scene(root, 450, 580);
             primaryStage.setTitle("PBL4 - Đăng Nhập Hệ Thống");
             primaryStage.setScene(scene);
             primaryStage.setResizable(false);
+            primaryStage.setOnCloseRequest(e -> System.exit(0));
             primaryStage.show();
         } catch (IOException e) {
             e.printStackTrace();

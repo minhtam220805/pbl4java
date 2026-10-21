@@ -61,8 +61,9 @@ CREATE TABLE IF NOT EXISTS file_transfers (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- -------------------------------------------------------
--- Dữ liệu tài khoản thử nghiệm ban đầu (Mật khẩu mặc định: 123456)
--- admin có role 'ADMIN', các user khác có role 'USER'
+-- Dữ liệu tài khoản thử nghiệm ban đầu (Mật khẩu đăng nhập mặc định: 123456)
+-- admin có role 'ADMIN', các user khác có role 'USER'.
+-- Khi ứng dụng khởi chạy, DatabaseConnection sẽ tự động băm SHA-256 + Salt cho các mật khẩu này.
 -- -------------------------------------------------------
 INSERT INTO users (username, password, role, status) VALUES 
 ('admin', '123456', 'ADMIN', 'OFFLINE'),

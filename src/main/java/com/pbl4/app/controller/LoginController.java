@@ -52,6 +52,16 @@ public class LoginController {
 
         if (txtServerIp != null) txtServerIp.setText(defaultIp);
         if (txtServerPort != null) txtServerPort.setText(defaultPort);
+
+        // Phím Enter chuyển nhanh giữa các ô và đăng nhập
+        if (txtUsername != null) txtUsername.setOnAction(e -> {
+            if (txtPassword != null) txtPassword.requestFocus();
+        });
+        if (txtPassword != null) txtPassword.setOnAction(e -> onLogin(null));
+        if (txtServerIp != null) txtServerIp.setOnAction(e -> {
+            if (txtServerPort != null) txtServerPort.requestFocus();
+        });
+        if (txtServerPort != null) txtServerPort.setOnAction(e -> onLogin(null));
     }
 
     /**
@@ -69,6 +79,11 @@ public class LoginController {
             return;
         }
 
+        if (username.contains(" ") || username.contains(":")) {
+            setStatus("Tên đăng nhập không được chứa khoảng trắng hoặc ký tự ':'!", true);
+            return;
+        }
+
         if (password.isEmpty()) {
             setStatus("Vui lòng nhập mật khẩu!", true);
             return;
@@ -80,7 +95,7 @@ public class LoginController {
         }
 
         setButtonsDisabled(true);
-        setStatus("Đang xác thực thông tin tài khoản...", false);
+        setStatus("Đang kết nối đến máy chủ và xác thực...", false);
 
         // Chạy kết nối trong Thread riêng để tránh đơ giao diện
         new Thread(() -> {
@@ -124,7 +139,11 @@ public class LoginController {
 
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    setStatus("Không thể kết nối đến máy chủ: " + e.getMessage(), true);
+                    String msg = e.getMessage();
+                    if (e instanceof java.net.ConnectException || (msg != null && msg.contains("Connection refused"))) {
+                        msg = "Không thể kết nối! Vui lòng đảm bảo ChatServer đang chạy tại " + ip + ":" + portStr;
+                    }
+                    setStatus(msg, true);
                     setButtonsDisabled(false);
                 });
             }
@@ -143,6 +162,11 @@ public class LoginController {
 
         if (username.isEmpty() || password.isEmpty()) {
             setStatus("Vui lòng nhập đầy đủ tên đăng nhập và mật khẩu để đăng ký!", true);
+            return;
+        }
+
+        if (username.contains(" ") || username.contains(":")) {
+            setStatus("Tên đăng nhập không được chứa khoảng trắng hoặc ký tự ':'!", true);
             return;
         }
 
@@ -168,7 +192,7 @@ public class LoginController {
                 Platform.runLater(() -> {
                     setButtonsDisabled(false);
                     if (response != null && response.equals("REGISTER_SUCCESS")) {
-                        setStatus("Đăng ký tài khoản thành công! Bạn có thể đăng nhập ngay.", false);
+                        setStatus("Đăng ký tài khoản thành công! Bạn có thể nhấn 'Đăng Nhập' ngay.", false);
                     } else {
                         String errMsg = (response != null && response.startsWith("REGISTER_FAIL:"))
                                 ? response.substring(14)
@@ -182,7 +206,11 @@ public class LoginController {
 
             } catch (Exception e) {
                 Platform.runLater(() -> {
-                    setStatus("Lỗi kết nối máy chủ khi đăng ký: " + e.getMessage(), true);
+                    String msg = e.getMessage();
+                    if (e instanceof java.net.ConnectException || (msg != null && msg.contains("Connection refused"))) {
+                        msg = "Không thể kết nối! Vui lòng đảm bảo ChatServer đang chạy tại " + ip + ":" + portStr;
+                    }
+                    setStatus(msg, true);
                     setButtonsDisabled(false);
                 });
             }
@@ -209,6 +237,7 @@ public class LoginController {
             stage.setTitle("PBL4 - Trang Quản Trị Hệ Thống (ADMIN)");
             stage.setScene(new Scene(root, 1050, 720));
             stage.setResizable(true);
+            stage.setOnCloseRequest(e -> adminController.onLogout(null));
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();
@@ -232,6 +261,7 @@ public class LoginController {
             stage.setTitle("PBL4 Chat & P2P File Transfer - " + username);
             stage.setScene(new Scene(root, 1020, 700));
             stage.setResizable(true);
+            stage.setOnCloseRequest(e -> mainController.shutdown());
             stage.show();
         } catch (Exception e) {
             e.printStackTrace();

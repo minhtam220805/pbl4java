@@ -3,74 +3,103 @@
 <?import javafx.geometry.Insets?>
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.GridPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
+<?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
 <?import javafx.scene.text.Font?>
 
-<VBox prefWidth="480.0" spacing="15.0" style="-fx-background-color: #f8f9fa; -fx-padding: 25;"
+<VBox prefWidth="520.0" spacing="18.0"
       xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1"
-      fx:controller="com.pbl4.app.controller.SettingController">
+      fx:controller="com.pbl4.app.controller.SettingController"
+      stylesheets="@../style/theme.css"
+      style="-fx-background-color: #f8fafc; -fx-padding: 26 30;">
 
-    <Label text="Cài Đặt Cấu Hình Hệ Thống" textFill="#2c3e50">
-        <font>
-            <Font name="System Bold" size="18.0" />
-        </font>
-    </Label>
+    <!-- Header Cài Đặt -->
+    <HBox alignment="CENTER_LEFT" spacing="12.0">
+        <StackPane prefHeight="42.0" prefWidth="42.0"
+                   style="-fx-background-color: #e0e7ff; -fx-background-radius: 12;">
+            <Label text="⚙️" textFill="#4f46e5">
+                <font><Font size="20.0" /></font>
+            </Label>
+        </StackPane>
+        <VBox spacing="2.0">
+            <Label text="Cài Đặt Cấu Hình Hệ Thống" textFill="#0f172a">
+                <font>
+                    <Font name="System Bold" size="18.0" />
+                </font>
+            </Label>
+            <Label text="Tùy chỉnh thông số mạng và thư mục lưu trữ file P2P" textFill="#64748b">
+                <font><Font size="12.0" /></font>
+            </Label>
+        </VBox>
+    </HBox>
 
-    <VBox spacing="5.0">
-        <Label text="Địa chỉ IP Server:" textFill="#34495e">
-            <font>
-                <Font name="System Bold" size="12.0" />
-            </font>
-        </Label>
-        <TextField fx:id="txtServerIp" promptText="127.0.0.1"
-                   style="-fx-pref-height: 35; -fx-background-radius: 4; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-padding: 0 10;" />
-    </VBox>
+    <Separator style="-fx-opacity: 0.5;" />
 
-    <VBox spacing="5.0">
-        <Label text="Cổng Server (Port):" textFill="#34495e">
-            <font>
-                <Font name="System Bold" size="12.0" />
-            </font>
-        </Label>
-        <TextField fx:id="txtServerPort" promptText="8888"
-                   style="-fx-pref-height: 35; -fx-background-radius: 4; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-padding: 0 10;" />
-    </VBox>
+    <!-- Card nội dung cài đặt -->
+    <VBox spacing="14.0" styleClass="card" style="-fx-padding: 20;">
+        
+        <HBox spacing="14.0">
+            <VBox spacing="5.0" HBox.hgrow="ALWAYS">
+                <Label text="Địa chỉ IP Server:" textFill="#334155">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="txtServerIp" promptText="127.0.0.1" prefHeight="38.0"
+                           styleClass="text-field" />
+            </VBox>
 
-    <VBox spacing="5.0">
-        <Label text="Cổng P2P Lắng Nghe:" textFill="#34495e">
-            <font>
-                <Font name="System Bold" size="12.0" />
-            </font>
-        </Label>
-        <TextField fx:id="txtP2PPort" promptText="9999"
-                   style="-fx-pref-height: 35; -fx-background-radius: 4; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-padding: 0 10;" />
-    </VBox>
-
-    <VBox spacing="5.0">
-        <Label text="Thư mục lưu file nhận được:" textFill="#34495e">
-            <font>
-                <Font name="System Bold" size="12.0" />
-            </font>
-        </Label>
-        <HBox spacing="8.0">
-            <TextField fx:id="txtSaveDirectory" HBox.hgrow="ALWAYS"
-                       style="-fx-pref-height: 35; -fx-background-radius: 4; -fx-border-color: #bdc3c7; -fx-border-radius: 4; -fx-padding: 0 10;" />
-            <Button fx:id="btnBrowse" mnemonicParsing="false" onAction="#onBrowseDirectory" prefHeight="35.0"
-                    style="-fx-background-color: #95a5a6; -fx-text-fill: white; -fx-background-radius: 4; -fx-cursor: hand;"
-                    text="Duyệt..." />
+            <VBox spacing="5.0" prefWidth="130.0">
+                <Label text="Cổng Server (Port):" textFill="#334155">
+                    <font>
+                        <Font name="System Bold" size="12.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="txtServerPort" promptText="8888" prefHeight="38.0"
+                           styleClass="text-field" />
+            </VBox>
         </HBox>
+
+        <VBox spacing="5.0">
+            <Label text="Cổng P2P Lắng Nghe (Receiver Port):" textFill="#334155">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <TextField fx:id="txtP2PPort" promptText="9999" prefHeight="38.0"
+                       styleClass="text-field" />
+            <Label text="* Hệ thống sẽ tự động tăng cổng nếu cổng này bị chiếm bởi client khác." textFill="#94a3b8">
+                <font><Font size="11.0" /></font>
+            </Label>
+        </VBox>
+
+        <VBox spacing="5.0">
+            <Label text="Thư mục nhận file P2P (Downloads):" textFill="#334155">
+                <font>
+                    <Font name="System Bold" size="12.0" />
+                </font>
+            </Label>
+            <HBox spacing="8.0" alignment="CENTER_LEFT">
+                <TextField fx:id="txtSaveDirectory" HBox.hgrow="ALWAYS" prefHeight="38.0"
+                           styleClass="text-field" />
+                <Button fx:id="btnBrowse" mnemonicParsing="false" onAction="#onBrowseDirectory"
+                        prefHeight="38.0" prefWidth="90.0"
+                        styleClass="button, btn-secondary"
+                        text="📁 Duyệt..." />
+            </HBox>
+        </VBox>
     </VBox>
 
-    <HBox alignment="CENTER_RIGHT" spacing="10.0">
-        <VBox.margin>
-            <Insets top="15.0" />
-        </VBox.margin>
-        <Button fx:id="btnSave" mnemonicParsing="false" onAction="#onSaveSettings" prefHeight="38.0" prefWidth="120.0"
-                style="-fx-background-color: #27ae60; -fx-text-fill: white; -fx-font-weight: bold; -fx-background-radius: 4; -fx-cursor: hand;"
-                text="Lưu Cài Đặt" />
+    <!-- Nút Lưu -->
+    <HBox alignment="CENTER_RIGHT" spacing="12.0">
+        <Button fx:id="btnSave" mnemonicParsing="false" onAction="#onSaveSettings"
+                prefHeight="40.0" prefWidth="140.0"
+                styleClass="button, btn-success"
+                text="💾 Lưu Cài Đặt" />
     </HBox>
 
 </VBox>

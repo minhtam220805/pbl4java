@@ -1,5 +1,6 @@
 package com.pbl4.app.network;
 
+import com.pbl4.app.dao.DatabaseConnection;
 import com.pbl4.app.dao.LogDAO;
 import com.pbl4.app.dao.UserDAO;
 
@@ -42,9 +43,15 @@ public class ChatServer {
             serverSocket = new ServerSocket(port);
             isRunning = true;
             threadPool = Executors.newCachedThreadPool();
+            boolean dbOk = DatabaseConnection.initializeDatabase();
             System.out.println("==================================================");
             System.out.println("  ChatServer đã khởi động thành công trên cổng: " + port);
-            System.out.println("  Kết nối CSDL MySQL: pbl4_db đã sẵn sàng.");
+            if (dbOk) {
+                System.out.println("  Kết nối CSDL MySQL: " + DatabaseConnection.getDatabaseName() + " [SẴN SÀNG]");
+            } else {
+                System.err.println("  [CẢNH BÁO] Không thể kết nối hoặc khởi tạo CSDL MySQL: " + DatabaseConnection.getDatabaseName());
+                System.err.println("  Vui lòng đảm bảo dịch vụ MySQL (XAMPP) đang chạy trên cổng 3306.");
+            }
             System.out.println("==================================================");
 
             while (isRunning) {
@@ -110,6 +117,10 @@ public class ChatServer {
         private String username;
         private String userRole = "USER";
 
+        // Thông tin P2P của client này (IP + port) — được đăng ký sau khi đăng nhập
+        private String p2pIp = null;
+        private int    p2pPort = -1;
+
         public ClientHandler(Socket socket) {
             this.socket = socket;
         }
@@ -134,11 +145,17 @@ public class ChatServer {
                             String regPass = parts[1].trim();
                             if (regUser.isEmpty() || regPass.isEmpty()) {
                                 writer.println("REGISTER_FAIL:Tên đăng nhập và mật khẩu không được để trống!");
+                            } else if (regUser.contains(" ") || regUser.contains(":")) {
+                                writer.println("REGISTER_FAIL:Tên đăng nhập không được chứa khoảng trắng hoặc dấu hai chấm!");
+                            } else if (!DatabaseConnection.testConnection()) {
+                                writer.println("REGISTER_FAIL:Không thể kết nối CSDL MySQL! Vui lòng kiểm tra MySQL server.");
+                            } else if (userDAO.userExists(regUser)) {
+                                writer.println("REGISTER_FAIL:Tên tài khoản đã tồn tại trong hệ thống!");
                             } else if (userDAO.register(regUser, regPass)) {
                                 logDAO.saveActivityLog(regUser, "REGISTER", "Đăng ký tài khoản thành công từ " + socket.getInetAddress().getHostAddress());
                                 writer.println("REGISTER_SUCCESS");
                             } else {
-                                writer.println("REGISTER_FAIL:Tên tài khoản đã tồn tại trong hệ thống!");
+                                writer.println("REGISTER_FAIL:Lỗi hệ thống khi lưu tài khoản vào cơ sở dữ liệu!");
                             }
                         } else {
                             writer.println("REGISTER_FAIL:Dữ liệu đăng ký không đúng định dạng!");
@@ -151,6 +168,11 @@ public class ChatServer {
 
                         if (loginUser.isEmpty()) {
                             writer.println("LOGIN_FAIL:Tên người dùng không được để trống.");
+                            continue;
+                        }
+
+                        if (!DatabaseConnection.testConnection()) {
+                            writer.println("LOGIN_FAIL:Không thể kết nối CSDL MySQL! Vui lòng kiểm tra MySQL server.");
                             continue;
                         }
 
@@ -175,15 +197,17 @@ public class ChatServer {
                         // Đăng nhập thành công, lấy thông tin phân quyền Role
                         username = loginUser;
                         userRole = userDAO.getUserRole(username);
+
+                        // Gửi phản hồi LOGIN_SUCCESS ngay lập tức trước khi thêm vào danh sách clients
+                        // Điều này ngăn ngừa race condition khi có broadcast ngắt kết nối/tin nhắn từ client khác xen vào
+                        writer.println("LOGIN_SUCCESS:" + userRole);
+                        authenticated = true;
+
                         clients.put(username, this);
                         userDAO.updateStatus(username, "ONLINE");
 
                         // Lưu log LOGIN kèm vai trò
                         logDAO.saveActivityLog(username, "LOGIN", "Đăng nhập thành công (Quyền: " + userRole + ") từ IP " + socket.getInetAddress().getHostAddress());
-
-                        // Trả về kèm vai trò phân quyền: LOGIN_SUCCESS:ADMIN hoặc LOGIN_SUCCESS:USER
-                        writer.println("LOGIN_SUCCESS:" + userRole);
-                        authenticated = true;
 
                         // Mặc định gọi getChatHistory(username, "ALL", 50, 0) để trả về 50 tin nhắn nhóm gần nhất
                         List<String> groupHistory = logDAO.getChatHistory(username, "ALL", 50, 0);
@@ -264,6 +288,29 @@ public class ChatServer {
                                 receiverClient.sendMessage(notifyStr);
                             }
                             sendMessage("PRIVATE_ECHO:" + receiver + ":" + sysMsg);
+                        }
+                    }
+                    // 5. Đăng ký thông tin P2P: P2P_REGISTER:port
+                    else if (clientMessage.startsWith("P2P_REGISTER:")) {
+                        try {
+                            int port = Integer.parseInt(clientMessage.substring(13).trim());
+                            this.p2pPort = port;
+                            this.p2pIp   = socket.getInetAddress().getHostAddress();
+                            System.out.println("[P2P] " + username + " đăng ký P2P tại " + p2pIp + ":" + p2pPort);
+                        } catch (NumberFormatException e) {
+                            System.err.println("[P2P] P2P_REGISTER sai định dạng từ: " + username);
+                        }
+                    }
+                    // 6. Yêu cầu lấy thông tin P2P của người nhận: GET_P2P_INFO:targetUsername
+                    else if (clientMessage.startsWith("GET_P2P_INFO:")) {
+                        String target = clientMessage.substring(13).trim();
+                        ClientHandler targetHandler = clients.get(target);
+                        if (targetHandler != null && targetHandler.p2pPort > 0 && targetHandler.p2pIp != null) {
+                            sendMessage("P2P_INFO:" + target + ":" + targetHandler.p2pIp + ":" + targetHandler.p2pPort);
+                        } else if (targetHandler == null) {
+                            sendMessage("P2P_INFO_FAIL:" + target + ":Người dùng không online!");
+                        } else {
+                            sendMessage("P2P_INFO_FAIL:" + target + ":Người dùng chưa đăng ký cổng P2P.");
                         }
                     }
                 }
