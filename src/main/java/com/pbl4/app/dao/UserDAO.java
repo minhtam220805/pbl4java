@@ -27,23 +27,43 @@ public class UserDAO {
         if (username == null || username.trim().isEmpty() || password == null || password.isEmpty()) {
             return false;
         }
-        String hashedPassword = PasswordHelper.hashPassword(password.trim());
+        String cleanUser = username.trim();
+        String cleanPass = password.trim();
+        String hashedPassword = PasswordHelper.hashPassword(cleanPass);
         if (hashedPassword == null) return false;
 
-        String sql = "SELECT id FROM users WHERE username = ? AND password = ?";
+        String sql = "SELECT id, password FROM users WHERE username = ?";
         try (Connection conn = DatabaseConnection.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql)) {
 
-            stmt.setString(1, username.trim());
-            stmt.setString(2, hashedPassword);
+            stmt.setString(1, cleanUser);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                return rs.next();
+                if (rs.next()) {
+                    int id = rs.getInt("id");
+                    String dbPass = rs.getString("password");
+
+                    // 1. Khớp với mật khẩu đã băm SHA-256
+                    if (hashedPassword.equals(dbPass)) {
+                        return true;
+                    }
+
+                    // 2. Tương thích ngược: Nếu CSDL lưu plain-text cũ (như '123456'), cho phép đăng nhập và tự động băm lại ngay
+                    if (cleanPass.equals(dbPass)) {
+                        try (PreparedStatement upd = conn.prepareStatement("UPDATE users SET password = ? WHERE id = ?")) {
+                            upd.setString(1, hashedPassword);
+                            upd.setInt(2, id);
+                            upd.executeUpdate();
+                        }
+                        return true;
+                    }
+                }
             }
         } catch (SQLException e) {
             System.err.println("Lỗi khi đăng nhập CSDL: " + e.getMessage());
             return false;
         }
+        return false;
     }
 
     /**

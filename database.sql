@@ -63,10 +63,10 @@ CREATE TABLE IF NOT EXISTS file_transfers (
 -- -------------------------------------------------------
 -- Dữ liệu tài khoản thử nghiệm ban đầu (Mật khẩu đăng nhập mặc định: 123456)
 -- admin có role 'ADMIN', các user khác có role 'USER'.
--- Khi ứng dụng khởi chạy, DatabaseConnection sẽ tự động băm SHA-256 + Salt cho các mật khẩu này.
+-- Chuỗi bên dưới là mã băm SHA-256 (kèm Salt bảo mật) của mật khẩu '123456'.
 -- -------------------------------------------------------
 INSERT INTO users (username, password, role, status) VALUES 
-('admin', '123456', 'ADMIN', 'OFFLINE'),
-('alice', '123456', 'USER', 'OFFLINE'),
-('bob', '123456', 'USER', 'OFFLINE')
-ON DUPLICATE KEY UPDATE role=VALUES(role);
+('admin', '73649ba5810663c1765b962ce60a62adc4b58f9fff87596b3873c5c3cae2ec7b', 'ADMIN', 'OFFLINE'),
+('alice', '73649ba5810663c1765b962ce60a62adc4b58f9fff87596b3873c5c3cae2ec7b', 'USER', 'OFFLINE'),
+('bob', '73649ba5810663c1765b962ce60a62adc4b58f9fff87596b3873c5c3cae2ec7b', 'USER', 'OFFLINE')
+ON DUPLICATE KEY UPDATE password=VALUES(password), role=VALUES(role);
