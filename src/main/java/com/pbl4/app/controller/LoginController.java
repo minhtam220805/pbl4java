@@ -14,8 +14,10 @@ import javafx.stage.Stage;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 /**
  * LoginController: Xử lý đăng nhập và đăng ký tài khoản qua ChatServer & MySQL,
@@ -102,8 +104,8 @@ public class LoginController {
             try {
                 int port = Integer.parseInt(portStr);
                 Socket socket = new Socket(ip, port);
-                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
                 // Gửi thông điệp đăng nhập có mật khẩu: LOGIN:username:password
                 writer.println("LOGIN:" + username + ":" + password);
@@ -182,8 +184,8 @@ public class LoginController {
             try {
                 int port = Integer.parseInt(portStr);
                 Socket socket = new Socket(ip, port);
-                PrintWriter writer = new PrintWriter(socket.getOutputStream(), true);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
+                PrintWriter writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
+                BufferedReader reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
 
                 // Gửi thông điệp đăng ký: REGISTER:username:password
                 writer.println("REGISTER:" + username + ":" + password);

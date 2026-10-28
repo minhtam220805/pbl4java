@@ -7,9 +7,11 @@ import com.pbl4.app.dao.UserDAO;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -128,8 +130,8 @@ public class ChatServer {
         @Override
         public void run() {
             try {
-                reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), "UTF-8"));
-                writer = new PrintWriter(socket.getOutputStream(), true);
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream(), StandardCharsets.UTF_8));
+                writer = new PrintWriter(new OutputStreamWriter(socket.getOutputStream(), StandardCharsets.UTF_8), true);
 
                 // Vòng lặp xác thực ban đầu (LOGIN hoặc REGISTER)
                 boolean authenticated = false;

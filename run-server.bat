@@ -1,4 +1,6 @@
 @echo off
+chcp 65001 >nul
+set "JAVA_TOOL_OPTIONS=-Dfile.encoding=UTF-8"
 cd /d "%~dp0"
 echo ==========================================
 echo    KHOI CHAY PBL4 CHAT SERVER (PORT 8888)

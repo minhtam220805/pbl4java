@@ -68,12 +68,12 @@ public class DatabaseConnection {
 
     public static String getUrl() {
         return "jdbc:mysql://" + dbHost + ":" + dbPort + "/" + dbName
-                + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
+                + "?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8";
     }
 
     private static String getServerUrl() {
         return "jdbc:mysql://" + dbHost + ":" + dbPort
-                + "/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
+                + "/?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&useUnicode=true&characterEncoding=UTF-8";
     }
 
     /**

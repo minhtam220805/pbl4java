@@ -5,6 +5,8 @@
 
 CREATE DATABASE IF NOT EXISTS pbl4_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE pbl4_db;
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
 
 -- -------------------------------------------------------
 -- 1. Bảng users: Quản lý thông tin tài khoản người dùng & Phân quyền
